@@ -3,8 +3,6 @@
 """
 
 Next Steps:
-1. Add function save the table down.
-2. Rewrite existing code into a function that scrapes.
 3. Manipulate the data table to create necessary columns (e.g. just wins for
                                                           total and monthly)
 4. Create necessary tables to translate team wins into "Owner" wins
@@ -42,7 +40,12 @@ def save_current_standings(current_standings):
     """Saves down the latest pull for current and future reference."""
     filename = 'Standings {}.pkl'.format(datetime.date.today())
     current_standings.to_pickle(filename)
+    print("File saved down as {}".format(filename))
 
 current_pull = pull_current_standings(2020)
 
-save_current_standings(current_pull)
+current_pull['Wins'] = current_pull['Overall'].str.extract('(\d+)-', expand=False).astype(int)
+
+print(current_pull)
+
+#save_current_standings(current_pull)
