@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import pandas as pd
-import datetime
-
-recent_standings = pd.read_pickle('Standings 2020-03-28.pkl')
 
 OwnerMatch = {
     'Atlanta Hawks': 'Neil', 
