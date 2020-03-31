@@ -42,10 +42,10 @@ def save_current_standings(current_standings):
     current_standings.to_pickle(filename)
     print("File saved down as {}".format(filename))
 
-current_pull = pull_current_standings(2020)
+#current_pull = pull_current_standings(2020)
 
-current_pull['Wins'] = current_pull['Overall'].str.extract('(\d+)-', expand=False).astype(int)
+#current_pull['Wins'] = current_pull['Overall'].str.extract('(\d+)-', expand=False).astype(int)
 
-print(current_pull)
+#print(current_pull)
 
 #save_current_standings(current_pull)
