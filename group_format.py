@@ -16,4 +16,6 @@ def load_latest_table():
     return latest_table
 
 #Code to begin reformatter
-print(load_latest_table())
+
+def format_table(original_table):
+    original_table['Wins'] = current_pull['Overall'].str.extract('(\d+)-', expand=False).astype(int)
