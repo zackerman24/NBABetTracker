@@ -7,6 +7,8 @@ Next Steps:
                                                           total and monthly)
 4. Create necessary tables to translate team wins into "Owner" wins
 5. Create graphs to show trends over time (monthly)
+6. Create the table that gets updated weekly and compares to previous week's
+performance.
 
 """
 
