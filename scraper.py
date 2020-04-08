@@ -17,6 +17,7 @@ import re
 from bs4 import BeautifulSoup
 import pandas as pd
 import datetime
+#np.where for location
 
 
 def pull_current_standings(year):
