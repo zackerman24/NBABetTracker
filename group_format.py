@@ -1,23 +1,65 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+
+Next Steps:
+1. Create a function to generate trending graph
+    - Create folders per season (so you can safely pull one season easily)
+    - Create a trending table to that tracks person's wins each week
+2. Add trending performance to weekly chart
+3, Create the user-facing options to easily run necessary updates
+    - Scrape updated standings
+    - View the latest standings
+    - View trended standings
+
+"""
+
 import pandas as pd
-from scraper import *
-from reference import *
+from reference import OwnerMatch, RoundMatch
 import glob
 import numpy as np
 import os
 import seaborn as sns
 import matplotlib.pyplot as plt
+import requests
+import re
+from bs4 import BeautifulSoup
+import datetime
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 pd.set_option('display.width', 100)
 
+def pull_current_standings(year):
+    """Pulls NBA standings at the current point in time."""
+    
+    comm = re.compile("<!--|--!>")
+    url = "https://www.basketball-reference.com/leagues/NBA_{}_standings.html".format(year)
+    page = requests.get(url).content.decode('utf-8')
+    soup = BeautifulSoup(re.sub("<!--|-->","",page),features='lxml')
+    standings = soup.find('table', {'id':'expanded_standings'})
+    
+    header_row = standings.find_all('tr')[1]
+    headers = [th.get_text() for th in header_row.find_all('th')][1:]
+    rows = standings.find_all('tr')[2:]
+    team_stats = [[td.get_text() for td in rows[i].find_all('td')]
+                  for i in range(len(rows))]
+
+    nba_standings = pd.DataFrame(team_stats, columns = headers)
+    print(nba_standings)
+    return nba_standings
+
+def save_current_standings(current_standings):
+    """Saves down the latest pull for current and future reference."""
+    filename = '/past_data_pulls/Standings {}.pkl'.format(datetime.date.today())
+    current_standings.to_pickle(filename)
+    print("File saved down as {}".format(filename))
+
 def load_latest_table():  
     """Pulls in the pickle file that was last saved."""
     
-    list_of_files = glob.glob('*.pkl')
+    list_of_files = glob.glob('/past_data_pulls/*.pkl')
     latest_pull = max(list_of_files, key=os.path.getctime)
     latest_table = pd.read_pickle(latest_pull)
     return latest_table
@@ -52,11 +94,6 @@ def sum_table(formatted_table):
     return summed_table
 
 
-f_table = format_table(load_latest_table())
-table = sum_table(format_table(load_latest_table()))
-print(table)
-
-
 def week_chart(formatted_table,summed_table):
     """Creates a chart that shows the standings and split by team."""
     
@@ -82,5 +119,3 @@ def week_chart(formatted_table,summed_table):
                    '{:1.0f}'.format(bar.get_height()),ha='center')
     
     fig.tight_layout(pad=3)
-
-week_chart(f_table,table)
