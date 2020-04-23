@@ -41,14 +41,9 @@ def pull_current_standings(year):
 
 def save_current_standings(current_standings):
     """Saves down the latest pull for current and future reference."""
-    filename = 'Standings {}.pkl'.format(datetime.date.today())
+    filename = '/past_data_pulls/Standings {}.pkl'.format(datetime.date.today())
     current_standings.to_pickle(filename)
     print("File saved down as {}".format(filename))
 
-#current_pull = pull_current_standings(2020)
 
-#current_pull['Wins'] = current_pull['Overall'].str.extract('(\d+)-', expand=False).astype(int)
-
-#print(current_pull)
-
-#save_current_standings(current_pull)
+#save_current_standings(pull_current_standings(2020))
