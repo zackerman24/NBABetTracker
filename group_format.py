@@ -57,14 +57,14 @@ def pull_current_standings(season_year):
 
 def save_current_standings(current_standings, season_year):
     """Saves down the latest pull for current and future reference."""
-    filename = '/past_data_pulls/{}/Standings {}.pkl'.format(season_year, datetime.date.today())
+    filename = 'past_data_pulls/{}/Standings {}.pkl'.format(season_year, datetime.date.today())
     current_standings.to_pickle(filename)
     print("File saved down as {}".format(filename))
 
 def load_latest_saved_table(season_year):  
     """Pulls in the pickle file that was last saved."""
     
-    list_of_files = glob.glob('/past_data_pulls/{}/*.pkl').format(season_year)
+    list_of_files = glob.glob('past_data_pulls/{}/*.pkl').format(season_year)
     latest_pull = max(list_of_files, key=os.path.getctime)
     latest_table = pd.read_pickle(latest_pull)
     return latest_table
@@ -116,7 +116,7 @@ def create_week_chart(formatted_table,summed_table):
     
 def create_trending_table(season_year):
     """Creates table summarizing each week's/pull's standings."""
-    list_of_files = glob.glob('/past_data_pulls/{}/*.pkl'.format(season_year))
+    list_of_files = glob.glob('past_data_pulls/{}/*.pkl'.format(season_year))
     list_of_files.sort(key=os.path.getctime)
     owners = list(set(OwnerMatch.values()))
     trending_table = pd.DataFrame(owners)
@@ -127,8 +127,11 @@ def create_trending_table(season_year):
         pivot['Total Wins'] = pivot['Round 1'] + pivot['Round 2']
         trending_table = trending_table.merge(pivot[['Owner','Total Wins']],how='left',
                                               on='Owner')
-        trending_table.rename(columns={'Total Wins':'Wins {}'.format(file.#extract date from filename)})
-                                                                     )
-    #Sort by latest column totals
-    #Return table
+        trending_table.rename(columns={'Total Wins':'Wins {}'.format(str(file).split('Standings ')[1].split('.pkl')[0])})
+    
+    latest_file = list_of_files[-1]
+    latest_column = 'Wins {}'.format(str(latest_file).split('Standings ')[1].split('.pkl')[0])
+    trending_table.sort_values(by=[latest_column],ascending=False)
+    return trending_table
+        
     #New formula to create chart from table
