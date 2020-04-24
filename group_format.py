@@ -31,11 +31,11 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 pd.set_option('display.width', 100)
 
-def pull_current_standings(year):
-    """Pulls NBA standings at the current point in time."""
+def pull_current_standings(season_year):
+    """Pulls NBA standings at the current point in time and applies formatting."""
     
     comm = re.compile("<!--|--!>")
-    url = "https://www.basketball-reference.com/leagues/NBA_{}_standings.html".format(year)
+    url = "https://www.basketball-reference.com/leagues/NBA_{}_standings.html".format(season_year)
     page = requests.get(url).content.decode('utf-8')
     soup = BeautifulSoup(re.sub("<!--|-->","",page),features='lxml')
     standings = soup.find('table', {'id':'expanded_standings'})
@@ -47,36 +47,30 @@ def pull_current_standings(year):
                   for i in range(len(rows))]
 
     nba_standings = pd.DataFrame(team_stats, columns = headers)
-    print(nba_standings)
+    nba_standings['Wins'] = nba_standings['Overall'].str.extract('(\d+)-', expand=False).astype(int)
+    nba_standings ['Owner'] = nba_standings['Team'].map(OwnerMatch)
+    nba_standings['Round'] = nba_standings['Team'].map(RoundMatch)
+    nba_standings.dropna(subset=['Owner'], inplace=True)
+    nba_standings['Round_1_Team'] = ["Yes" if x == 'Round 1' else None for x in nba_standings['Round']]
+    nba_standings['Round_2_Team'] = ["Yes" if x == 'Round 2' else None for x in nba_standings['Round']]
     return nba_standings
 
-def save_current_standings(current_standings):
+def save_current_standings(current_standings, season_year):
     """Saves down the latest pull for current and future reference."""
-    filename = '/past_data_pulls/Standings {}.pkl'.format(datetime.date.today())
+    filename = '/past_data_pulls/{}/Standings {}.pkl'.format(season_year, datetime.date.today())
     current_standings.to_pickle(filename)
     print("File saved down as {}".format(filename))
 
-def load_latest_table():  
+def load_latest_saved_table(season_year):  
     """Pulls in the pickle file that was last saved."""
     
-    list_of_files = glob.glob('/past_data_pulls/*.pkl')
+    list_of_files = glob.glob('/past_data_pulls/{}/*.pkl').format(season_year)
     latest_pull = max(list_of_files, key=os.path.getctime)
     latest_table = pd.read_pickle(latest_pull)
     return latest_table
 
-def format_table(original_table):
-    """Formats table to include necessary group attributes, such as owner & round."""
-    
-    original_table['Wins'] = original_table['Overall'].str.extract('(\d+)-', expand=False).astype(int)
-    original_table ['Owner'] = original_table['Team'].map(OwnerMatch)
-    original_table['Round'] = original_table['Team'].map(RoundMatch)
-    original_table.dropna(subset=['Owner'], inplace=True)
-    original_table['Round_1_Team'] = ["Yes" if x == 'Round 1' else None for x in original_table['Round']]
-    original_table['Round_2_Team'] = ["Yes" if x == 'Round 2' else None for x in original_table['Round']]
-    return original_table
-
-def sum_table(formatted_table):
-    """Creates table showing standings by total wins."""
+def create_sum_table(formatted_table):
+    """Creates table showing standings by total wins for given standings."""
     
     summed_table = formatted_table.pivot(index='Owner',columns='Round', values = 'Wins').reset_index()
     summed_table['Total Wins'] = summed_table['Round 1'] + summed_table['Round 2']
@@ -94,8 +88,8 @@ def sum_table(formatted_table):
     return summed_table
 
 
-def week_chart(formatted_table,summed_table):
-    """Creates a chart that shows the standings and split by team."""
+def create_week_chart(formatted_table,summed_table):
+    """Creates charts that show the 1) standings and 2) splits by team."""
     
     sns.set()
     #sns.set_style('ticks')
@@ -119,3 +113,22 @@ def week_chart(formatted_table,summed_table):
                    '{:1.0f}'.format(bar.get_height()),ha='center')
     
     fig.tight_layout(pad=3)
+    
+def create_trending_table(season_year):
+    """Creates table summarizing each week's/pull's standings."""
+    list_of_files = glob.glob('/past_data_pulls/{}/*.pkl'.format(season_year))
+    list_of_files.sort(key=os.path.getctime)
+    owners = list(set(OwnerMatch.values()))
+    trending_table = pd.DataFrame(owners)
+    
+    for file in list_of_files:
+        file_data = pd.read_pickle(file)
+        pivot = file_data.pivot(index='Owner',columns='Round',values='Wins').reset_index()
+        pivot['Total Wins'] = pivot['Round 1'] + pivot['Round 2']
+        trending_table = trending_table.merge(pivot[['Owner','Total Wins']],how='left',
+                                              on='Owner')
+        trending_table.rename(columns={'Total Wins':'Wins {}'.format(file.#extract date from filename)})
+                                                                     )
+    #Sort by latest column totals
+    #Return table
+    #New formula to create chart from table
