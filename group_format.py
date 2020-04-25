@@ -4,14 +4,8 @@
 """
 
 Next Steps:
-1. Create a function to generate trending graph
-    - Create folders per season (so you can safely pull one season easily)
-    - Create a trending table to that tracks person's wins each week
-2. Add trending performance to weekly chart
-3, Create the user-facing options to easily run necessary updates
-    - Scrape updated standings
-    - View the latest standings
-    - View trended standings
+1. Create trended chart
+2. Add function to week chart that compares standings to last pull
 
 """
 
@@ -59,12 +53,12 @@ def save_current_standings(current_standings, season_year):
     """Saves down the latest pull for current and future reference."""
     filename = 'past_data_pulls/{}/Standings {}.pkl'.format(season_year, datetime.date.today())
     current_standings.to_pickle(filename)
-    print("File saved down as {}".format(filename))
+    print("\nFile saved down as {}".format(filename))
 
 def load_latest_saved_table(season_year):  
     """Pulls in the pickle file that was last saved."""
     
-    list_of_files = glob.glob('past_data_pulls/{}/*.pkl').format(season_year)
+    list_of_files = glob.glob('past_data_pulls/{}/*.pkl'.format(season_year))
     latest_pull = max(list_of_files, key=os.path.getctime)
     latest_table = pd.read_pickle(latest_pull)
     return latest_table
@@ -113,13 +107,16 @@ def create_week_chart(formatted_table,summed_table):
                    '{:1.0f}'.format(bar.get_height()),ha='center')
     
     fig.tight_layout(pad=3)
+    plt.show()
     
 def create_trending_table(season_year):
     """Creates table summarizing each week's/pull's standings."""
     list_of_files = glob.glob('past_data_pulls/{}/*.pkl'.format(season_year))
+    latest_pull = max(list_of_files, key=os.path.getctime)
+    latest_table = pd.read_pickle(latest_pull)
+    sum_table = create_sum_table(latest_table)
+    trending_table = sum_table.loc[:,['Owner']]
     list_of_files.sort(key=os.path.getctime)
-    owners = list(set(OwnerMatch.values()))
-    trending_table = pd.DataFrame(owners)
     
     for file in list_of_files:
         file_data = pd.read_pickle(file)
@@ -127,7 +124,8 @@ def create_trending_table(season_year):
         pivot['Total Wins'] = pivot['Round 1'] + pivot['Round 2']
         trending_table = trending_table.merge(pivot[['Owner','Total Wins']],how='left',
                                               on='Owner')
-        trending_table.rename(columns={'Total Wins':'Wins {}'.format(str(file).split('Standings ')[1].split('.pkl')[0])})
+        trending_table.rename(columns={'Total Wins':'Wins {}'.format(str(file).split('Standings ')[1].split('.pkl')[0])},
+                              inplace=True)
     
     latest_file = list_of_files[-1]
     latest_column = 'Wins {}'.format(str(latest_file).split('Standings ')[1].split('.pkl')[0])
